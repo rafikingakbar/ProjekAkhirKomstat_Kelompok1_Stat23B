@@ -287,7 +287,7 @@ server <- function(input, output, session) {
     var_names <- rownames(coefs)
     est <- round(coefs[, "Estimate"], 2)
     
-    formula_str <- paste0(values$dep_var, " = ", est[1], "*(Intercept)")
+    formula_str <- paste0(values$dep_var, " = ", est[1])
     if (length(est) > 1) {
       for (i in 2:length(est)) {
         sign <- ifelse(est[i] >= 0, " + ", " - ")
