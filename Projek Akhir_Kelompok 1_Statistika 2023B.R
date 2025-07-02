@@ -166,7 +166,7 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             verbatimTextOutput("model_summary")
           ),
-           box(
+          box(
             title = tagList(icon("chart-line"), "Scatter Plot: Data Aktual vs Prediksi"),
             width = 12,
             status = "primary",
@@ -221,6 +221,17 @@ ui <- dashboardPage(
             status = "primary",
             plotOutput("resid_vs_index")
           ),
+          box(
+            title = tagList(icon("chart-scatter"), "Visualisasi Homoskedastisitas: Residual vs Fitted"),
+            width = 12,
+            solidHeader = TRUE,
+            status = "primary",
+            plotOutput("resid_vs_fitted"),
+            tags$p("Dalam model yang baik (homoskedastisitas), plot residual vs fitted tidak menunjukkan pola khusus."),
+            tags$p("Jika pola seperti kipas atau parabola terlihat, ada indikasi heteroskedastisitas.")
+          ),
+        
+          
           box(
             title = tagList(icon("balance-scale"), "Uji Homoskedastisitas (Breusch-Pagan Test)"),
             width = 12,
@@ -396,6 +407,21 @@ server <- function(input, output, session) {
     abline(h = 0, lty = 2)
   })
   
+  output$resid_vs_fitted <- renderPlot({
+    req(values$model)
+    
+    res <- resid(values$model)
+    fit <- fitted(values$model)
+    
+    plot(fit, res,
+         main = "Plot Residual vs Fitted",
+         xlab = "Fitted Values",
+         ylab = "Residual",
+         pch = 19, col = "blue")
+    abline(h = 0, lty = 2, col = "red")
+  })
+  
+  
   output$bp_test <- renderPrint({
     req(values$model)
     test <- bptest(values$model)
@@ -454,7 +480,7 @@ server <- function(input, output, session) {
       theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
       coord_fixed()
   })
-
+  
   output$actual_vs_predicted_plot <- renderPlot({
     req(values$model)
     
@@ -473,7 +499,7 @@ server <- function(input, output, session) {
     legend("topleft", legend = c("Data", "Ideal"),
            col = c("red", "blue"), pch = c(19, NA), lty = c(NA, 1), lwd = c(NA, 2))
   })
-
+  
 }
 
 
