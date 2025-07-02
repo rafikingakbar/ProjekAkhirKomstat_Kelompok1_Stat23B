@@ -1,6 +1,9 @@
 library(shiny)
 library(shinyWidgets)
 library(shinydashboard)
+library("car")
+library("ggplot2")
+library("reshape2")
 
 ui <- dashboardPage(
   skin = "blue",
@@ -185,6 +188,25 @@ ui <- dashboardPage(
             verbatimTextOutput("shapiro_interpretasi")
             
           ),
+          
+          # tab multikolinearitas
+          box(
+            title = tagList(icon("columns"), "Uji Multikolinearitas"),
+            width = 12,
+            solidHeader = TRUE,
+            status = "warning",
+            uiOutput("multikolinearitas_info"),
+            br(),
+            conditionalPanel(
+              condition = "output.show_vif == true",
+              verbatimTextOutput("vif_output")
+            ),
+            conditionalPanel(
+              condition = "output.show_corr == true",
+              plotOutput("cor_matrix_plot")
+            )
+          ),
+          
           box(
             title = tagList(icon("wave-square"), "Residual vs Index (Independensi)"),
             width = 12,
@@ -337,7 +359,6 @@ server <- function(input, output, session) {
     shapiro <- shapiro.test(res)
     pval <- shapiro$p.value
     alpha <- 0.05
-    
     cat("Hipotesis:\n")
     cat("H0 : Residual berdistribusi normal\n")
     cat("H1 : Residual tidak berdistribusi normal\n\n")
@@ -355,7 +376,7 @@ server <- function(input, output, session) {
     if (pval < alpha) {
       cat("Keputusan: Tolak H0\n")
       cat("Interpretasi: Residual tidak berdistribusi normal.\n")
-    } else {
+    } else { 
       cat("Keputusan: Gagal tolak H0\n")
       cat("Interpretasi: Residual berdistribusi normal.\n")
     }
@@ -377,9 +398,55 @@ server <- function(input, output, session) {
       cat("Terdapat indikasi heteroskedastisitas (p-value < 0.05).\n")
     } else {
       cat("Tidak terdapat indikasi heteroskedastisitas (p-value ≥ 0.05).\n")
+    } 
+  })
+  # Penjelasan multikolinearitas
+  output$multikolinearitas_info <- renderUI({
+    req(values$model)
+    if (length(values$indep_vars) < 2) {
+      return(HTML("<p style='color:red; font-weight:bold;'>Model regresi Anda hanya memiliki 1 variabel prediktor (X), maka tidak perlu menguji multikolinearitas.</p>"))
+    } else {
+      return(HTML("<p><b>Multikolinearitas</b> dicek menggunakan VIF (Variance Inflation Factor) dan korelasi antar variabel numerik prediktor.</p>"))
     }
   })
   
+  # Tampilkan VIF hanya jika X ≥ 2
+  output$show_vif <- reactive({
+    return(!is.null(values$model) && length(values$indep_vars) >= 2)
+  })
+  outputOptions(output, "show_vif", suspendWhenHidden = FALSE)
+  
+  # Tampilkan matrix korelasi numerik jika ada ≥ 2 variabel numerik
+  output$show_corr <- reactive({
+    req(values$data, values$indep_vars)
+    num_vars <- values$indep_vars[sapply(values$data[values$indep_vars], is.numeric)]
+    return(length(num_vars) >= 2)
+  })
+  outputOptions(output, "show_corr", suspendWhenHidden = FALSE)
+  
+  # Output VIF
+  output$vif_output <- renderPrint({
+    req(values$model, length(values$indep_vars) >= 2)
+    car::vif(values$model)
+  })
+  
+  # Korelasi Pearson antar numerik
+  output$cor_matrix_plot <- renderPlot({
+    req(values$data, values$indep_vars)
+    num_vars <- values$indep_vars[sapply(values$data[values$indep_vars], is.numeric)]
+    req(length(num_vars) >= 2)
+    corr_matrix <- cor(values$data[num_vars], use = "pairwise.complete.obs")
+    melted <- melt(corr_matrix)
+    
+    ggplot(data = melted, aes(Var1, Var2, fill = value)) +
+      geom_tile(color = "white") +
+      scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+                           midpoint = 0, limit = c(-1,1), space = "Lab",
+                           name="Pearson\nCorrelation") +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+      coord_fixed()
+  })
 }
 
 
