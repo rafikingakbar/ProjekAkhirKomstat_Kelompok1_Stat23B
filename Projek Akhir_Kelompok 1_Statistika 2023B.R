@@ -140,6 +140,14 @@ ui <- dashboardPage(
             ),
             
             conditionalPanel(
+              condition = "output.y_status == 'failed'",
+              tags$div(
+                tags$hr(),
+                tags$p("\u274C Gagal: Variabel dependen (Y) harus numerik.",
+                       style = "color: red; font-weight: bold;")
+              )
+            ),
+            conditionalPanel(
               condition = "output.regression_status == 'success'",
               tags$div(
                 tags$hr(),
@@ -151,7 +159,7 @@ ui <- dashboardPage(
               condition = "output.regression_status == 'failed'",
               tags$div(
                 tags$hr(),
-                tags$p("\u274C Regresi gagal dijalankan. Pastikan variabel kategorik diatur ke Kategorik (Dummy).",
+                tags$p("\u274C Regresi gagal dijalankan. Pastikan variabel independen (X) diatur ke dummy jika kategorik.",
                        style = "color: red; font-weight: bold;")
               )
             )
@@ -292,7 +300,8 @@ server <- function(input, output, session) {
     indep_vars = NULL,
     x_types = list(),
     model = NULL,
-    regression_status = NULL
+    regression_status = NULL,
+    y_status = NULL
   )
   
   observe({
@@ -344,48 +353,75 @@ server <- function(input, output, session) {
     }
   })
   
-  observeEvent(input$run_regression, {
-    req(values$data, values$dep_var, values$indep_vars)
-    df <- values$data
-    
-    for (var in values$indep_vars) {
-      tipe <- values$x_types[[var]]
-      if (!is.null(tipe)) {
-        if (tipe == "Kategorik (Dummy)") {
-          df[[var]] <- as.factor(df[[var]])
-        } else {
-          df[[var]] <- as.numeric(df[[var]])
-        }
+ observeEvent(input$run_regression, {
+  req(values$data, values$dep_var, values$indep_vars)
+  df <- values$data
+  
+  # cek Y harus numerik
+  if (!is.numeric(df[[values$dep_var]])) {
+    values$model <- NULL
+    values$regression_status <- NULL  # tidak relevan
+    values$y_status <- "failed"
+    showNotification(
+      paste0(
+        "Variabel dependen (Y) harus numerik.\n",
+        "Anda memilih variabel kategorik sebagai Y."
+      ),
+      type = "error",
+      duration = 7
+    )
+    return()
+  } else {
+    values$y_status <- "success"
+  }
+  
+  # proses X
+  for (var in values$indep_vars) {
+    tipe <- values$x_types[[var]]
+    if (!is.null(tipe)) {
+      if (tipe == "Kategorik (Dummy)") {
+        df[[var]] <- as.factor(df[[var]])
+      } else {
+        df[[var]] <- as.numeric(df[[var]])
       }
     }
-    
-    formula_str <- paste(values$dep_var, "~", paste(values$indep_vars, collapse = " + "))
-    tryCatch({
-      model <- lm(as.formula(formula_str), data = df)
-      values$model <- model
-      values$regression_status <- "success"
-    }, error = function(e) {
-      values$model <- NULL
-      values$regression_status <- "failed"
-      showNotification(
-        paste0(
-          "Terjadi kesalahan saat menjalankan regresi.\n",
-          "Pastikan variabel kategorik diatur sebagai Kategorik (Dummy)."
-        ),
-        type = "error",
-        duration = 7
-      )
-    })
+  }
+  
+  formula_str <- paste(values$dep_var, "~", paste(values$indep_vars, collapse = " + "))
+  tryCatch({
+    model <- lm(as.formula(formula_str), data = df)
+    values$model <- model
+    values$regression_status <- "success"
+  }, error = function(e) {
+    values$model <- NULL
+    values$regression_status <- "failed"
+    showNotification(
+      paste0(
+        "Terjadi kesalahan saat menjalankan regresi.\n",
+        "Pastikan variabel independen (X) bertipe numerik atau diatur sebagai dummy."
+      ),
+      type = "error",
+      duration = 7
+    )
   })
+})
+
   
   output$model_exists <- reactive({
     return(!is.null(values$model))
   })
   outputOptions(output, "model_exists", suspendWhenHidden = FALSE)
+  
   output$regression_status <- reactive({
     values$regression_status
   })
   outputOptions(output, "regression_status", suspendWhenHidden = FALSE)
+  
+  output$y_status <- reactive({
+  values$y_status
+  })
+  outputOptions(output, "y_status", suspendWhenHidden = FALSE)
+
   output$model_formula <- renderPrint({
     req(values$model)
     coefs <- summary(values$model)$coefficients
