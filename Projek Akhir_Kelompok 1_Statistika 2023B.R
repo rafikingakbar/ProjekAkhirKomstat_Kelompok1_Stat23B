@@ -31,6 +31,7 @@ ui <- dashboardPage(
       background-attachment: fixed;
       background-position: center;
       font-family: 'Segoe UI', sans-serif;
+      teks-align: justify;
     }
 
     .home-box, .box {
