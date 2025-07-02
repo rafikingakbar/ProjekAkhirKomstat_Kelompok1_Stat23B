@@ -222,25 +222,35 @@ ui <- dashboardPage(
             plotOutput("resid_vs_index")
           ),
           box(
-            title = tagList(icon("chart-scatter"), "Visualisasi Homoskedastisitas: Residual vs Fitted"),
+            title = tagList(icon("balance-scale"), "Uji Homoskedastisitas (Visual & Breusch-Pagan Test)"),
             width = 12,
             solidHeader = TRUE,
             status = "primary",
+            
+            # Plot residual vs fitted
             plotOutput("resid_vs_fitted"),
-            tags$p("Dalam model yang baik (homoskedastisitas), plot residual vs fitted tidak menunjukkan pola khusus."),
-            tags$p("Jika pola seperti kipas atau parabola terlihat, ada indikasi heteroskedastisitas.")
-          ),
-        
-          
-          box(
-            title = tagList(icon("balance-scale"), "Uji Homoskedastisitas (Breusch-Pagan Test)"),
-            width = 12,
-            solidHeader = TRUE,
-            status = "primary",
+            
+            tags$hr(),
+            
+            # Output uji Breusch-Pagan
+            h4("Uji Breusch-Pagan (Formal Test)"),
             verbatimTextOutput("bp_test"),
-            tags$p("H0: Tidak terdapat heteroskedastisitas (varian residual konstan)."),
-            tags$p("Jika p-value < 0.05, maka tolak H0: ada indikasi heteroskedastisitas.")
+            
+            tags$hr(),
+            
+            # Penjelasan dan hipotesis
+            tags$div(
+              h4("Hipotesis Uji:"),
+              tags$ul(
+                tags$li(tags$b("H0:"), " Tidak terdapat heteroskedastisitas (varian residual konstan / homoskedastisitas)"),
+                tags$li(tags$b("H1:"), " Terdapat heteroskedastisitas (varian residual tidak konstan)")
+              ),
+              
+              tags$p("Interpretasi visual: Jika titik-titik pada plot residual vs fitted tidak membentuk pola tertentu (acak), maka indikasi homoskedastisitas terpenuhi."),
+              tags$p("Interpretasi uji formal: Jika p-value < 0.05, maka tolak H0 dan terdapat indikasi heteroskedastisitas.")
+            )
           )
+          
           
         )
       )
