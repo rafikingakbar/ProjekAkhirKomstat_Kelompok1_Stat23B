@@ -224,12 +224,22 @@ ui <- dashboardPage(
           ),
           
           box(
-            title = tagList(icon("wave-square"), "Residual vs Index (Independensi)"),
+            title = tagList(icon("wave-square"), "Residual vs Index dan Uji Durbin-Watson (Independensi)"),
             width = 12,
             solidHeader = TRUE,
             status = "primary",
-            plotOutput("resid_vs_index")
+            
+            # Plot residual vs index
+            plotOutput("resid_vs_index"),
+            tags$hr(),
+            
+            # Uji Durbin-Watson
+            h4("Uji Durbin-Watson"),
+            verbatimTextOutput("dw_test"),
+            tags$p("H0: Tidak terdapat autokorelasi (residual independen)."),
+            tags$p("Jika p-value < 0.05, maka tolak H0: residual tidak independen (terdapat autokorelasi).")
           ),
+          
           box(
             title = tagList(icon("balance-scale"), "Uji Homoskedastisitas (Visual & Breusch-Pagan Test)"),
             width = 12,
@@ -479,6 +489,20 @@ server <- function(input, output, session) {
       return(HTML("<p><b>Multikolinearitas</b> dicek menggunakan VIF (Variance Inflation Factor) dan korelasi antar variabel numerik prediktor.</p>"))
     }
   })
+  
+  output$dw_test <- renderPrint({
+    req(values$model)
+    dw <- lmtest::dwtest(values$model)
+    
+    print(dw)
+    cat("\nInterpretasi:\n")
+    if (dw$p.value < 0.05) {
+      cat("Terdapat indikasi autokorelasi pada residual (p-value < 0.05) → residual tidak independen.\n")
+    } else {
+      cat("Tidak terdapat indikasi autokorelasi (p-value ≥ 0.05) → residual cenderung independen.\n")
+    }
+  })
+  
   
   # Tampilkan VIF hanya jika X ≥ 2
   output$show_vif <- reactive({
