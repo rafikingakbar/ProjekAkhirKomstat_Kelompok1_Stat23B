@@ -165,6 +165,13 @@ ui <- dashboardPage(
             status = "info",
             solidHeader = TRUE,
             verbatimTextOutput("model_summary")
+          ),
+           box(
+            title = tagList(icon("chart-line"), "Scatter Plot: Data Aktual vs Prediksi"),
+            width = 12,
+            status = "primary",
+            solidHeader = TRUE,
+            plotOutput("actual_vs_predicted_plot")
           )
         )
       ),
@@ -447,6 +454,26 @@ server <- function(input, output, session) {
       theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
       coord_fixed()
   })
+
+  output$actual_vs_predicted_plot <- renderPlot({
+    req(values$model)
+    
+    df <- model.frame(values$model)  # data yang benar-benar digunakan oleh model
+    y_aktual <- df[[1]]              # kolom pertama = Y
+    y_prediksi <- predict(values$model)
+    
+    plot(y_aktual, y_prediksi,
+         xlab = "Actual", ylab = "Predicted",
+         main = "Actual vs Predicted",
+         pch = 19, col = "red",
+         xlim = range(c(y_aktual, y_prediksi), na.rm = TRUE),
+         ylim = range(c(y_aktual, y_prediksi), na.rm = TRUE))
+    
+    abline(a = 0, b = 1, col = "blue", lwd = 2)  # Garis ideal
+    legend("topleft", legend = c("Data", "Ideal"),
+           col = c("red", "blue"), pch = c(19, NA), lty = c(NA, 1), lwd = c(NA, 2))
+  })
+
 }
 
 
