@@ -182,18 +182,18 @@ ui <- dashboardPage(
         tabName = "model",
         fluidRow(
           box(
-            title = tagList(icon("code"), "Formula Model"),
-            width = 12,
-            status = "primary",
-            solidHeader = TRUE,
-            verbatimTextOutput("model_formula")
-          ),
-          box(
             title = tagList(icon("list-alt"), "Summary Model Regresi"),
             width = 12,
             status = "info",
             solidHeader = TRUE,
             verbatimTextOutput("model_summary")
+          ),
+          box(
+            title = tagList(icon("code"), "Persamaan Regresi"),
+            width = 12,
+            status = "primary",
+            solidHeader = TRUE,
+            verbatimTextOutput("model_formula")
           ),
           box(
             title = tagList(icon("chart-line"), "Scatter Plot: Data Aktual vs Prediksi"),
