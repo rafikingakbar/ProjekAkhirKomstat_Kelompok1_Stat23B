@@ -143,7 +143,7 @@ ui <- dashboardPage(
             ), 
             
             radioButtons("na_option", "Penanganan Nilai Hilang:",
-                         choices = c("Biarkan data NA)" = "none",
+                         choices = c("Biarkan data NA" = "none",
                                      "Hapus baris dengan NA" = "drop",
                                      "Ganti NA dengan rata-rata (hanya numerik)" = "mean"),
                          selected = "none"),
@@ -191,26 +191,34 @@ ui <- dashboardPage(
           box(
             title = tagList(icon("code"), "Persamaan Regresi"),
             width = 12,
-            status = "primary",
+            status = "info",
             solidHeader = TRUE,
             verbatimTextOutput("model_formula")
+          ),
+           box(
+            title = tagList(icon("chart-bar"), "Evaluasi Kinerja Model"),
+            width = 12,
+            status = "info",
+            solidHeader = TRUE,
+            verbatimTextOutput("model_metrics")
           ),
           box(
             title = tagList(icon("chart-line"), "Scatter Plot: Data Aktual vs Prediksi"),
             width = 12,
-            status = "primary",
+            status = "info",
             solidHeader = TRUE,
             plotOutput("actual_vs_predicted_plot")
           )
         )
       ),
+      # simulasi prediksi
       tabItem(
         tabName = "predict",
         fluidRow(
           box(
             title = tagList(icon("calculator"), "Prediksi Nilai Y Baru"),
             width = 12,
-            status = "info",
+            status = "primary",
             solidHeader = TRUE,
             uiOutput("manual_input_ui"),
             actionButton("predict_manual", "Prediksi", class = "btn btn-success"),
@@ -227,7 +235,7 @@ ui <- dashboardPage(
             title = tagList(icon("chart-bar"), "Uji Normalitas Residual"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             fluidRow(
               column(12, plotOutput("hist_resid")),
               column(12, plotOutput("qq_resid"))
@@ -244,7 +252,7 @@ ui <- dashboardPage(
             title = tagList(icon("wave-square"), "Residual vs Index dan Uji Durbin-Watson (Independensi Residual)"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             # Plot residual vs index
             h4("Visualisasi Residual terhadap Index"),
             plotOutput("resid_vs_index"),
@@ -258,7 +266,7 @@ ui <- dashboardPage(
             title = tagList(icon("balance-scale"), "Uji Homoskedastisitas (Visual & Breusch-Pagan Test)"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             
             # Plot residual vs fitted
             plotOutput("resid_vs_fitted"),
@@ -279,7 +287,7 @@ ui <- dashboardPage(
             title = tagList(icon("columns"), "Uji Multikolinearitas & Korelasi"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             uiOutput("uji_korelasi_output")  # Output tunggal yang mencakup semua jenis korelasi
           ),
           
@@ -729,6 +737,7 @@ server <- function(input, output, session) {
     legend("topleft", legend = c("Data", "Ideal"),
            col = c("red", "blue"), pch = c(19, NA), lty = c(NA, 1), lwd = c(NA, 2))
   })
+          
   output$manual_input_ui <- renderUI({
     req(values$model, values$indep_vars)
     
@@ -752,7 +761,36 @@ server <- function(input, output, session) {
     
     do.call(tagList, input_ui)
   })
-  
+          
+  output$model_metrics <- renderPrint({
+    req(values$model)
+    
+    y_actual <- values$model$model[[1]]
+    y_pred <- predict(values$model)
+    
+    res <- y_actual - y_pred
+    n <- length(y_actual)
+    p <- length(coef(values$model)) - 1
+    
+    rmse <- sqrt(mean(res^2))
+    mae <- mean(abs(res))
+    
+    r_squared <- summary(values$model)$r.squared
+    r_squared_adj <- summary(values$model)$adj.r.squared
+    
+    cat("Evaluasi Kinerja Model:\n")
+    cat("------------------------\n")
+    cat("RMSE (Root Mean Square Error):", round(rmse, 4), "\n")
+    cat("MAE  (Mean Absolute Error)   :", round(mae, 4), "\n")
+    cat("R² (R-squared)               :", round(r_squared, 4), "\n")
+    cat("R² Adjusted                  :", round(r_squared_adj, 4), "\n")
+    
+    cat("\nInterpretasi Umum:\n")
+    cat("- RMSE dan MAE yang kecil menandakan prediksi mendekati data asli.\n")
+    cat("- R² mengukur seberapa banyak variasi Y yang dijelaskan oleh model.\n")
+    cat("- R² Adjusted memperbaiki R² untuk penalti banyaknya variabel X.\n")
+  })
+          
   observeEvent(input$predict_manual, {
     req(values$model, values$indep_vars)
     
