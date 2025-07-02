@@ -336,13 +336,28 @@ server <- function(input, output, session) {
     res <- resid(values$model)
     shapiro <- shapiro.test(res)
     pval <- shapiro$p.value
+    alpha <- 0.05
     
-    if (pval < 0.05) {
-      cat("Interpretasi: p-value =", round(pval,4), 
-          "\nResidual tidak berdistribusi normal (tolak H0).")
+    cat("Hipotesis:\n")
+    cat("H0 : Residual berdistribusi normal\n")
+    cat("H1 : Residual tidak berdistribusi normal\n\n")
+    
+    cat("Signifikansi (alpha) :", alpha, "\n")
+    
+    if (pval < 0.0001) {
+      pval_text <- "< 0.0001"
     } else {
-      cat("Interpretasi: p-value =", round(pval,4),
-          "\nResidual berdistribusi normal (gagal tolak H0).")
+      pval_text <- round(pval, 4)
+    }
+    
+    cat("p-value :", pval_text, "\n\n")
+    
+    if (pval < alpha) {
+      cat("Keputusan: Tolak H0\n")
+      cat("Interpretasi: Residual tidak berdistribusi normal.\n")
+    } else {
+      cat("Keputusan: Gagal tolak H0\n")
+      cat("Interpretasi: Residual berdistribusi normal.\n")
     }
   })
   
