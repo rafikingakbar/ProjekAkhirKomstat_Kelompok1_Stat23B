@@ -143,7 +143,7 @@ ui <- dashboardPage(
             ), 
             
             radioButtons("na_option", "Penanganan Nilai Hilang:",
-                         choices = c("Biarkan data NA)" = "none",
+                         choices = c("Biarkan data NA" = "none",
                                      "Hapus baris dengan NA" = "drop",
                                      "Ganti NA dengan rata-rata (hanya numerik)" = "mean"),
                          selected = "none"),
