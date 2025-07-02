@@ -191,26 +191,27 @@ ui <- dashboardPage(
           box(
             title = tagList(icon("code"), "Persamaan Regresi"),
             width = 12,
-            status = "primary",
+            status = "info",
             solidHeader = TRUE,
             verbatimTextOutput("model_formula")
           ),
           box(
             title = tagList(icon("chart-line"), "Scatter Plot: Data Aktual vs Prediksi"),
             width = 12,
-            status = "primary",
+            status = "info",
             solidHeader = TRUE,
             plotOutput("actual_vs_predicted_plot")
           )
         )
       ),
+      # simulasi prediksi
       tabItem(
         tabName = "predict",
         fluidRow(
           box(
             title = tagList(icon("calculator"), "Prediksi Nilai Y Baru"),
             width = 12,
-            status = "info",
+            status = "primary",
             solidHeader = TRUE,
             uiOutput("manual_input_ui"),
             actionButton("predict_manual", "Prediksi", class = "btn btn-success"),
@@ -227,7 +228,7 @@ ui <- dashboardPage(
             title = tagList(icon("chart-bar"), "Uji Normalitas Residual"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             fluidRow(
               column(12, plotOutput("hist_resid")),
               column(12, plotOutput("qq_resid"))
@@ -244,7 +245,7 @@ ui <- dashboardPage(
             title = tagList(icon("wave-square"), "Residual vs Index dan Uji Durbin-Watson (Independensi Residual)"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             # Plot residual vs index
             h4("Visualisasi Residual terhadap Index"),
             plotOutput("resid_vs_index"),
@@ -258,7 +259,7 @@ ui <- dashboardPage(
             title = tagList(icon("balance-scale"), "Uji Homoskedastisitas (Visual & Breusch-Pagan Test)"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             
             # Plot residual vs fitted
             plotOutput("resid_vs_fitted"),
@@ -279,7 +280,7 @@ ui <- dashboardPage(
             title = tagList(icon("columns"), "Uji Multikolinearitas & Korelasi"),
             width = 12,
             solidHeader = TRUE,
-            status = "primary",
+            status = "info",
             uiOutput("uji_korelasi_output")  # Output tunggal yang mencakup semua jenis korelasi
           ),
           
