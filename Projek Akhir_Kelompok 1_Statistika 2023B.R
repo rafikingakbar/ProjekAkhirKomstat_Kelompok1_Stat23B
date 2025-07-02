@@ -95,7 +95,7 @@ ui <- dashboardPage(
               "<ol>
               <li><b>Unggah Data:</b> Upload file CSV yang akan dianalisis dan pilih variabel dependen serta independen.</li>
               <li><b>Pemodelan:</b> Buat model regresi linear berdasarkan variabel yang dipilih dan tipe variabel (numerik/kategorik dummy).</li>
-              <li><b>Uji Asumsi Klasik:</b> Lakukan pengujian asumsi seperti normalitas residual, independensi residual (Durbin-Watson),homoskedastisitas (Breusch-Pagan), dan multikolinearitas.</li>
+              <li><b>Uji Asumsi Klasik:</b> Lakukan pengujian asumsi seperti normalitas residual, independensi residual (Durbin-Watson), homoskedastisitas (Breusch-Pagan), dan multikolinearitas.</li>
               <li><b>Simulasi Prediksi:</b> Masukkan nilai variabel X baru secara manual untuk memprediksi nilai Y.</li>
             </ol>"
             ),
