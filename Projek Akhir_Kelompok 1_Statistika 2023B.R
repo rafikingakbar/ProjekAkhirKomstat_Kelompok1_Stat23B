@@ -241,20 +241,17 @@ ui <- dashboardPage(
           
           
           box(
-            title = tagList(icon("wave-square"), "Residual vs Index dan Uji Durbin-Watson (Independensi)"),
+            title = tagList(icon("wave-square"), "Residual vs Index dan Uji Durbin-Watson (Independensi Residual)"),
             width = 12,
             solidHeader = TRUE,
             status = "primary",
-            
             # Plot residual vs index
+            h4("Visualisasi Residual terhadap Index"),
             plotOutput("resid_vs_index"),
             tags$hr(),
-            
             # Uji Durbin-Watson
-            h4("Uji Durbin-Watson"),
+            h4("Uji Durbin-Watson (Formal Test)"),
             verbatimTextOutput("dw_test"),
-            tags$p("H0: Tidak terdapat autokorelasi (residual independen)."),
-            tags$p("Jika p-value < 0.05, maka tolak H0: residual tidak independen (terdapat autokorelasi).")
           ),
           
           box(
@@ -556,12 +553,34 @@ server <- function(input, output, session) {
     req(values$model)
     dw <- lmtest::dwtest(values$model)
     
-    print(dw)
-    cat("\nInterpretasi:\n")
-    if (dw$p.value < 0.05) {
-      cat("Terdapat indikasi autokorelasi pada residual (p-value < 0.05)\n❌ residual tidak independen.\n")
+    cat("Uji Durbin-Watson Residual\n\n")
+    cat("Durbin-Watson Test\n\n")
+    cat("data:  values$model\n")
+    cat(sprintf("DW = %.5f, ", dw$statistic))
+    
+    # Penanganan p-value kecil
+    if (dw$p.value < 0.0001) {
+      cat("p-value < 0.0001\n")
     } else {
-      cat("Tidak terdapat indikasi autokorelasi (p-value ≥ 0.05)\n✅ residual cenderung independen.\n")
+      cat(sprintf("p-value = %.4f\n", dw$p.value))
+    }
+    
+    cat("\nHipotesis:\n")
+    cat("H0 : Tidak terdapat autokorelasi (residual independen)\n")
+    cat("H1 : Terdapat autokorelasi (residual tidak independen)\n\n")
+    
+    cat("Signifikansi (alpha) : 0.05\n")
+    cat("p-value : ")
+    if (dw$p.value < 0.0001) {
+      cat("< 0.0001\n\n")
+    } else {
+      cat(sprintf("%.4f\n\n", dw$p.value))
+    }
+    
+    if (dw$p.value < 0.05) {
+      cat("Interpretasi: ❌ Residual tidak independen (terdapat autokorelasi).\n")
+    } else {
+      cat("Interpretasi: ✅ Residual independen (tidak terdapat autokorelasi).\n")
     }
   })
   
