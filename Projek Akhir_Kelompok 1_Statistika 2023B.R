@@ -16,8 +16,8 @@ ui <- dashboardPage(
       menuItem("Beranda", tabName = "home", icon = icon("home")),
       menuItem("Unggah Data", tabName = "upload", icon = icon("file-upload")),
       menuItem("Pemodelan", tabName = "model", icon = icon("chart-line")),
-      menuItem("Prediksi Baru", tabName = "predict", icon = icon("calculator")),
-      menuItem("Uji Asumsi Klasik", tabName = "asumsi", icon = icon("check-double"))
+      menuItem("Uji Asumsi Klasik", tabName = "asumsi", icon = icon("check-double")),
+      menuItem("Prediksi Baru", tabName = "predict", icon = icon("calculator"))
     )
   ),
   
@@ -221,23 +221,6 @@ ui <- dashboardPage(
             
           ),
           
-          # tab multikolinearitas
-          box(
-            title = tagList(icon("columns"), "Uji Multikolinearitas"),
-            width = 12,
-            solidHeader = TRUE,
-            status = "primary",
-            uiOutput("multikolinearitas_info"),
-            br(),
-            conditionalPanel(
-              condition = "output.show_vif == true",
-              verbatimTextOutput("vif_output")
-            ),
-            conditionalPanel(
-              condition = "output.show_corr == true",
-              plotOutput("cor_matrix_plot")
-            )
-          ),
           
           box(
             title = tagList(icon("wave-square"), "Residual vs Index dan Uji Durbin-Watson (Independensi)"),
@@ -273,8 +256,26 @@ ui <- dashboardPage(
             
             tags$hr(),
             
+            
+          ),
           
-          )
+          # tab multikolinearitas
+          box(
+            title = tagList(icon("columns"), "Uji Multikolinearitas"),
+            width = 12,
+            solidHeader = TRUE,
+            status = "primary",
+            uiOutput("multikolinearitas_info"),
+            br(),
+            conditionalPanel(
+              condition = "output.show_vif == true",
+              verbatimTextOutput("vif_output")
+            ),
+            conditionalPanel(
+              condition = "output.show_corr == true",
+              plotOutput("cor_matrix_plot")
+            )
+          ),
           
           
         )
