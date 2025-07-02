@@ -198,6 +198,206 @@ ui <- dashboardPage(
   )
 )
 
+library(shiny)
+library(shinyWidgets)
+library(shinydashboard)
+
+ui <- dashboardPage(
+  skin = "blue",
+  
+  dashboardHeader(title = "Analisis Regresi"),
+  
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Beranda", tabName = "home", icon = icon("home")),
+      menuItem("Unggah Data", tabName = "upload", icon = icon("file-upload")),
+      menuItem("Pemodelan", tabName = "model", icon = icon("chart-line")),
+      menuItem("Uji Asumsi Klasik", tabName = "asumsi", icon = icon("check-double"))
+    )
+  ),
+  
+  dashboardBody(
+    tags$head(
+      tags$style(HTML("
+    body, .content-wrapper {
+      background-image: url('https://images.pexels.com/photos/3183151/pexels-photo-3183151.jpeg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .home-box, .box {
+      background-color: rgba(255, 255, 255, 0.92) !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    h3, h4 {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    p, li {
+      font-size: 15px;
+      color: #333;
+    }
+
+    ol, ul {
+      padding-left: 20px;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      width: 100%;
+    }
+  "))
+    )
+    ,
+    
+    tabItems(
+      
+      # BERANDA
+      tabItem(
+        tabName = "home",
+        fluidRow(
+          box(
+            width = 12,
+            status = "info",
+            solidHeader = TRUE,
+            class = "home-box",
+            title = tagList(icon("info-circle"), "Selamat Datang di Aplikasi Analisis Regresi"),
+            
+            div(style = "text-align:center",
+                tags$img(
+                  src = "https://cdn-icons-png.flaticon.com/512/921/921591.png",
+                  height = "100px"
+                )
+            ),
+            
+            br(),
+            p("Aplikasi ini dirancang untuk memudahkan pengguna khususnya pelajar, peneliti, maupun praktisi dalam melakukan analisis regresi secara cepat, interaktif, dan tetap dapat dipahami hasilnya secara mendalam."),
+            p("Analisis regresi merupakan salah satu metode statistik yang digunakan untuk memahami dan memprediksi hubungan antara variabel dependen (target) dengan satu atau lebih variabel independen (prediktor). Model ini sangat berguna dalam berbagai bidang seperti ekonomi, teknik, kesehatan, dan ilmu sosial."),
+            p("Aplikasi ini juga mendukung regresi dengan variabel dummy, yaitu metode untuk mengakomodasi variabel kategorik seperti jenis kelamin, musim, atau wilayah. Variabel kategorik ini akan dikonversi menjadi bentuk numerik (dummy variable) agar dapat dimasukkan dalam model regresi linear."),
+            p("Dengan tampilan antarmuka yang ramah pengguna, Anda tidak perlu menulis kode untuk melakukan perhitungan, namun tetap dapat melihat hasil regresi dalam bentuk persamaan matematis, ringkasan statistik, serta pengujian asumsi-asumsi dasar regresi."),
+            
+            tags$hr(),
+            
+            h4(icon("list-ol"), "Langkah-langkah Pengujian:"),
+            HTML(
+              "<ol>
+                <li><b>Unggah Data:</b> Upload file CSV yang akan dianalisis.</li>
+                <li><b>Pemodelan:</b> Buat model regresi linear untuk memprediksi variabel target.</li>
+                <li><b>Uji Asumsi Klasik:</b> Cek normalitas residual, multikolinearitas, dan independensi.</li>
+              </ol>"
+            ),
+            
+            h4(icon("info"), "Penjelasan Analisis:"),
+            HTML(
+              "<ul>
+                <li><b>Pemodelan:</b> Memprediksi variabel Y berdasarkan X menggunakan metode regresi linear.</li>
+                <li><b>Asumsi Klasik:</b> Validasi syarat seperti normalitas, multikolinearitas, dan homoskedastisitas agar hasil regresi dapat diinterpretasikan dengan benar.</li>
+              </ul>"
+            )
+          )
+        )
+      ),
+      
+      # UNGGAH DATA
+      tabItem(
+        tabName = "upload",
+        fluidRow(
+          box(
+            title = tagList(icon("file-upload"), "Unggah Data"),
+            width = 4,
+            status = "primary",
+            solidHeader = TRUE,
+            
+            fileInput("file1", "Upload File (.csv)", accept = ".csv"),
+            tags$hr(),
+            uiOutput("var_select_ui"),
+            uiOutput("indep_vars_ui"),
+            tags$hr(),
+            uiOutput("x_type_ui"),
+            tags$hr(),
+            actionButton("run_regression", "Jalankan Regresi", class = "btn btn-success btn-block")
+          ),
+          
+          box(
+            title = tagList(icon("table"), "Preview Data"),
+            width = 8,
+            status = "info",
+            solidHeader = TRUE,
+            
+            div(class = "table-responsive",
+                tableOutput("table")
+            ),
+            conditionalPanel(
+              condition = "output.model_exists == true",
+              tags$div(
+                tags$hr(),
+                tags$p("✅ Regresi berhasil dijalankan. Silakan cek hasilnya di tab Pemodelan.",
+                       style = "color: green; font-weight: bold;")
+              )
+            )
+          )
+        )
+      ),
+      
+      # PEMODELAN
+      tabItem(
+        tabName = "model",
+        fluidRow(
+          box(
+            title = tagList(icon("code"), "Formula Model"),
+            width = 12,
+            status = "primary",
+            solidHeader = TRUE,
+            verbatimTextOutput("model_formula")
+          ),
+          box(
+            title = tagList(icon("list-alt"), "Summary Model Regresi"),
+            width = 12,
+            status = "info",
+            solidHeader = TRUE,
+            verbatimTextOutput("model_summary")
+          )
+        )
+      ),
+      
+      # UJI ASUMSI
+      tabItem(
+        tabName = "asumsi",
+        fluidRow(
+          box(
+            title = tagList(icon("chart-bar"), "Uji Normalitas Residual"),
+            width = 12,
+            solidHeader = TRUE,
+            status = "primary",
+            fluidRow(
+              column(12, plotOutput("hist_resid")),
+              column(12, plotOutput("qq_resid"))
+            ),
+            tags$hr(),
+            h4("Uji Shapiro-Wilk Residual"),
+            verbatimTextOutput("shapiro_test"),
+            verbatimTextOutput("shapiro_interpretasi")
+            
+          ),
+          box(
+            title = tagList(icon("wave-square"), "Residual vs Index (Independensi)"),
+            width = 12,
+            solidHeader = TRUE,
+            status = "primary",
+            plotOutput("resid_vs_index")
+          )
+        )
+      )
+    )
+  )
+)
+
 server <- function(input, output, session) {
   
   values <- reactiveValues(
@@ -343,6 +543,10 @@ server <- function(input, output, session) {
     abline(h = 0, lty = 2)
   })
 }
+
+
+shinyApp(ui, server)
+
 
 
 shinyApp(ui, server)
