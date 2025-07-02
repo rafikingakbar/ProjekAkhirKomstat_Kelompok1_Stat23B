@@ -191,7 +191,17 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             status = "primary",
             plotOutput("resid_vs_index")
+          ),
+          box(
+            title = tagList(icon("balance-scale"), "Uji Homoskedastisitas (Breusch-Pagan Test)"),
+            width = 12,
+            solidHeader = TRUE,
+            status = "primary",
+            verbatimTextOutput("bp_test"),
+            tags$p("H0: Tidak terdapat heteroskedastisitas (varian residual konstan)."),
+            tags$p("Jika p-value < 0.05, maka tolak H0: ada indikasi heteroskedastisitas.")
           )
+          
         )
       )
     )
@@ -199,7 +209,7 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output, session) {
-  
+  library(lmtest)
   values <- reactiveValues(
     data = NULL,
     dep_var = NULL,
@@ -342,6 +352,19 @@ server <- function(input, output, session) {
          ylab = "Residual", xlab = "Index", main = "Residual vs Index")
     abline(h = 0, lty = 2)
   })
+  
+  output$bp_test <- renderPrint({
+    req(values$model)
+    test <- bptest(values$model)
+    print(test)
+    cat("\nInterpretasi:\n")
+    if (test$p.value < 0.05) {
+      cat("Terdapat indikasi heteroskedastisitas (p-value < 0.05).\n")
+    } else {
+      cat("Tidak terdapat indikasi heteroskedastisitas (p-value ≥ 0.05).\n")
+    }
+  })
+  
 }
 
 
