@@ -41,6 +41,7 @@ Analisis mencakup:
 - ✅ Pemilihan variabel target (Y) dan prediktor (X)
 - ✅ Deteksi otomatis variabel numerik dan kategorik (dummy)
 - ✅ Pemodelan regresi linear secara interaktif
+- ✅ Evaluasi model regresi
 - ✅ Uji asumsi klasik:
   - Normalitas (Shapiro-Wilk, Q-Q Plot)
   - Homoskedastisitas (Breusch-Pagan)
@@ -48,7 +49,13 @@ Analisis mencakup:
   - Autokorelasi (Durbin-Watson)
 - ✅ Visualisasi residual
 - ✅ Scatter plot *Actual vs Predicted*
-- ✅ Prediksi nilai baru berdasarkan input manual
+- ✅ Prediksi nilai baru berdasarkan input user
+
+---
+
+## 📑 File Presentasi
+
+📂 **Presentasi (PDF)** → [Download di sini](PPT_Komstat_Kel1.pdf)
 
 ---
 
@@ -57,3 +64,5 @@ Analisis mencakup:
 Berikut contoh tampilan halaman beranda aplikasi:
 
 ![screenshot_beranda](Beranda.jpg)
+
+*Terima kasih sudah mengunjungi repositori kami — semoga bermanfaat! 🚀*
