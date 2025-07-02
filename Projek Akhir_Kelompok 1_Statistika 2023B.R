@@ -17,7 +17,7 @@ ui <- dashboardPage(
       menuItem("Unggah Data", tabName = "upload", icon = icon("file-upload")),
       menuItem("Pemodelan", tabName = "model", icon = icon("chart-line")),
       menuItem("Uji Asumsi Klasik", tabName = "asumsi", icon = icon("check-double")),
-      menuItem("Prediksi Baru", tabName = "predict", icon = icon("calculator"))
+      menuItem("Simulasi Prediksi", tabName = "predict", icon = icon("calculator"))
     )
   ),
   
@@ -92,18 +92,20 @@ ui <- dashboardPage(
             h4(icon("list-ol"), "Langkah-langkah Pengujian:"),
             HTML(
               "<ol>
-                <li><b>Unggah Data:</b> Upload file CSV yang akan dianalisis.</li>
-                <li><b>Pemodelan:</b> Buat model regresi linear untuk memprediksi variabel target.</li>
-                <li><b>Uji Asumsi Klasik:</b> Cek normalitas residual, multikolinearitas, dan independensi.</li>
-              </ol>"
+              <li><b>Unggah Data:</b> Upload file CSV yang akan dianalisis dan pilih variabel dependen serta independen.</li>
+              <li><b>Pemodelan:</b> Buat model regresi linear berdasarkan variabel yang dipilih dan tipe variabel (numerik/kategorik dummy).</li>
+              <li><b>Uji Asumsi Klasik:</b> Lakukan pengujian asumsi seperti normalitas residual, independensi residual (Durbin-Watson),homoskedastisitas (Breusch-Pagan), dan multikolinearitas.</li>
+              <li><b>Simulasi Prediksi:</b> Masukkan nilai variabel X baru secara manual untuk memprediksi nilai Y.</li>
+            </ol>"
             ),
             
             h4(icon("info"), "Penjelasan Analisis:"),
             HTML(
               "<ul>
-                <li><b>Pemodelan:</b> Memprediksi variabel Y berdasarkan X menggunakan metode regresi linear.</li>
-                <li><b>Asumsi Klasik:</b> Validasi syarat seperti normalitas, multikolinearitas, dan homoskedastisitas agar hasil regresi dapat diinterpretasikan dengan benar.</li>
-              </ul>"
+              <li><b>Pemodelan:</b> Model regresi digunakan untuk memprediksi nilai variabel dependen (Y) berdasarkan kombinasi variabel independen (X), baik numerik maupun kategorik (dengan dummy).</li>
+              <li><b>Asumsi Klasik:</b> Termasuk uji <b>normalitas</b> dengan histogram, QQ plot & Shapiro-Wilk; <b>independensi</b> dengan Durbin-Watson; <b>homoskedastisitas</b> secara visual dan uji Breusch-Pagan; serta <b>multikolinearitas</b> melalui korelasi Pearson dan Cramér's V.</li>
+              <li><b>Simulasi Prediksi:</b> Fitur untuk menguji prediksi model terhadap kombinasi nilai input baru dari pengguna.</li>
+            </ul>"
             )
           )
         )
