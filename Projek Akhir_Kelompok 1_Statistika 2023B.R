@@ -1,10 +1,10 @@
-
 library(shiny)
 library(shinyWidgets)
 library(shinydashboard)
 library("car")
 library("ggplot2")
 library("reshape2")
+library(lmtest)
 
 ui <- dashboardPage(
   skin = "blue",
@@ -137,7 +137,14 @@ ui <- dashboardPage(
             
             div(class = "table-responsive",
                 tableOutput("table")
-            ),
+            ), 
+            
+            radioButtons("na_option", "Penanganan Nilai Hilang:",
+                         choices = c("Hapus baris dengan NA" = "drop",
+                                     "Ganti NA dengan rata-rata (hanya numerik)" = "mean",
+                                     "Biarkan (akan error jika tidak ditangani)" = "none"),
+                         selected = "drop"),
+            
             
             conditionalPanel(
               condition = "output.y_status == 'failed'",
@@ -293,7 +300,6 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output, session) {
-  library(lmtest)
   values <- reactiveValues(
     data = NULL,
     dep_var = NULL,
@@ -306,8 +312,25 @@ server <- function(input, output, session) {
   
   observe({
     req(input$file1)
-    values$data <- read.csv(input$file1$datapath)
+    df <- read.csv(input$file1$datapath)
+    
+    # Tangani nilai hilang sesuai pilihan user
+    if (input$na_option == "drop") {
+      # Hapus baris hanya jika NA ada di kolom numerik
+      numeric_cols <- sapply(df, is.numeric)
+      df <- df[complete.cases(df[, numeric_cols, drop = FALSE]), ]
+      
+    } else if (input$na_option == "mean") {
+      numeric_cols <- sapply(df, is.numeric)
+      for (col in names(df)[numeric_cols]) {
+        df[[col]][is.na(df[[col]])] <- mean(df[[col]], na.rm = TRUE)
+      }
+    }
+    
+    values$data <- df
   })
+  
+  
   
   output$table <- renderTable({
     req(values$data)
@@ -353,59 +376,59 @@ server <- function(input, output, session) {
     }
   })
   
- observeEvent(input$run_regression, {
-  req(values$data, values$dep_var, values$indep_vars)
-  df <- values$data
-  
-  # cek Y harus numerik
-  if (!is.numeric(df[[values$dep_var]])) {
-    values$model <- NULL
-    values$regression_status <- NULL  # tidak relevan
-    values$y_status <- "failed"
-    showNotification(
-      paste0(
-        "Variabel dependen (Y) harus numerik.\n",
-        "Anda memilih variabel kategorik sebagai Y."
-      ),
-      type = "error",
-      duration = 7
-    )
-    return()
-  } else {
-    values$y_status <- "success"
-  }
-  
-  # proses X
-  for (var in values$indep_vars) {
-    tipe <- values$x_types[[var]]
-    if (!is.null(tipe)) {
-      if (tipe == "Kategorik (Dummy)") {
-        df[[var]] <- as.factor(df[[var]])
-      } else {
-        df[[var]] <- as.numeric(df[[var]])
+  observeEvent(input$run_regression, {
+    req(values$data, values$dep_var, values$indep_vars)
+    df <- values$data
+    
+    # cek Y harus numerik
+    if (!is.numeric(df[[values$dep_var]])) {
+      values$model <- NULL
+      values$regression_status <- NULL  # tidak relevan
+      values$y_status <- "failed"
+      showNotification(
+        paste0(
+          "Variabel dependen (Y) harus numerik.\n",
+          "Anda memilih variabel kategorik sebagai Y."
+        ),
+        type = "error",
+        duration = 7
+      )
+      return()
+    } else {
+      values$y_status <- "success"
+    }
+    
+    # proses X
+    for (var in values$indep_vars) {
+      tipe <- values$x_types[[var]]
+      if (!is.null(tipe)) {
+        if (tipe == "Kategorik (Dummy)") {
+          df[[var]] <- as.factor(df[[var]])
+        } else {
+          df[[var]] <- as.numeric(df[[var]])
+        }
       }
     }
-  }
-  
-  formula_str <- paste(values$dep_var, "~", paste(values$indep_vars, collapse = " + "))
-  tryCatch({
-    model <- lm(as.formula(formula_str), data = df)
-    values$model <- model
-    values$regression_status <- "success"
-  }, error = function(e) {
-    values$model <- NULL
-    values$regression_status <- "failed"
-    showNotification(
-      paste0(
-        "Terjadi kesalahan saat menjalankan regresi.\n",
-        "Pastikan variabel independen (X) bertipe numerik atau diatur sebagai dummy."
-      ),
-      type = "error",
-      duration = 7
-    )
+    
+    formula_str <- paste(values$dep_var, "~", paste(values$indep_vars, collapse = " + "))
+    tryCatch({
+      model <- lm(as.formula(formula_str), data = df)
+      values$model <- model
+      values$regression_status <- "success"
+    }, error = function(e) {
+      values$model <- NULL
+      values$regression_status <- "failed"
+      showNotification(
+        paste0(
+          "Terjadi kesalahan saat menjalankan regresi.\n",
+          "Pastikan variabel independen (X) bertipe numerik atau diatur sebagai dummy."
+        ),
+        type = "error",
+        duration = 7
+      )
+    })
   })
-})
-
+  
   
   output$model_exists <- reactive({
     return(!is.null(values$model))
@@ -418,10 +441,10 @@ server <- function(input, output, session) {
   outputOptions(output, "regression_status", suspendWhenHidden = FALSE)
   
   output$y_status <- reactive({
-  values$y_status
+    values$y_status
   })
   outputOptions(output, "y_status", suspendWhenHidden = FALSE)
-
+  
   output$model_formula <- renderPrint({
     req(values$model)
     coefs <- summary(values$model)$coefficients
