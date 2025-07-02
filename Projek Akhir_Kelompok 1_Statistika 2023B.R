@@ -274,25 +274,15 @@ ui <- dashboardPage(
             
           ),
           
-          # tab multikolinearitas
+           # tab multikolinearitas
           box(
-            title = tagList(icon("columns"), "Uji Multikolinearitas"),
+            title = tagList(icon("columns"), "Uji Multikolinearitas & Korelasi"),
             width = 12,
             solidHeader = TRUE,
             status = "primary",
-            uiOutput("multikolinearitas_info"),
-            br(),
-            conditionalPanel(
-              condition = "output.show_vif == true",
-              verbatimTextOutput("vif_output")
-            ),
-            conditionalPanel(
-              condition = "output.show_corr == true",
-              plotOutput("cor_matrix_plot")
-            )
+            uiOutput("uji_korelasi_output")  # Output tunggal yang mencakup semua jenis korelasi
           ),
-          
-          
+           
         )
       )
     )
@@ -602,25 +592,109 @@ server <- function(input, output, session) {
     car::vif(values$model)
   })
   
-  # Korelasi Pearson antar numerik
-  output$cor_matrix_plot <- renderPlot({
+  # MULTIKO
+  output$uji_korelasi_output <- renderUI({
     req(values$data, values$indep_vars)
-    num_vars <- values$indep_vars[sapply(values$data[values$indep_vars], is.numeric)]
-    req(length(num_vars) >= 2)
-    corr_matrix <- cor(values$data[num_vars], use = "pairwise.complete.obs")
-    melted <- melt(corr_matrix)
     
-    ggplot(data = melted, aes(Var1, Var2, fill = value)) +
-      geom_tile(color = "white") +
-      geom_text(aes(label = round(value, 2)), size = 4, color = "black") +
-      scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-                           midpoint = 0, limit = c(-1,1), space = "Lab",
-                           name="Pearson\nCorrelation") +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
-      coord_fixed()
+    num_vars <- values$indep_vars[sapply(values$indep_vars, function(x) is.numeric(values$data[[x]]))]
+    cat_vars <- values$indep_vars[sapply(values$indep_vars, function(x) is.factor(values$data[[x]]) || is.character(values$data[[x]]))]
+    
+    output_list <- list()
+    
+    # ----------- 1. Korelasi Numerik vs Numerik -----------
+    if (length(num_vars) >= 2) {
+      corr_matrix <- cor(values$data[num_vars], use = "pairwise.complete.obs")
+      melted <- reshape2::melt(corr_matrix)
+      
+      output$corr_plot <- renderPlot({
+        ggplot(melted, aes(Var1, Var2, fill = value)) +
+          geom_tile(color = "white") +
+          geom_text(aes(label = round(value, 2)), size = 4) +
+          scale_fill_gradient2(low = "red", high = "blue", mid = "white", midpoint = 0,
+                               limit = c(-1, 1), name = "Pearson\nCorrelation") +
+          theme_minimal() +
+          labs(title = "Korelasi Numerik vs Numerik") +
+          theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+      })
+      
+      output_list <- append(output_list, list(
+        tags$h4("Korelasi Numerik vs Numerik"),
+        plotOutput("corr_plot"),
+        tags$hr()
+      ))
+    }
+    
+    # ----------- 2. Korelasi Numerik vs Kategorik (ANOVA) -----------
+    if (length(num_vars) > 0 && length(cat_vars) > 0) {
+      output_list <- append(output_list, list(tags$h4("Korelasi Numerik vs Kategorik (ANOVA)")))
+      for (num in num_vars) {
+        for (cat in cat_vars) {
+          df <- na.omit(values$data[, c(num, cat)])
+          if (nrow(df) == 0) next
+          df[[cat]] <- as.factor(df[[cat]])
+          formula <- as.formula(paste(num, "~", cat))
+          result <- tryCatch(anova(lm(formula, data = df)), error = function(e) NULL)
+          
+          if (!is.null(result)) {
+            result_text <- capture.output(print(result))
+            output_list <- append(output_list, list(
+              tags$b(paste("ANOVA", num, "vs", cat)),
+              tags$pre(paste(result_text, collapse = "\n")),
+              tags$hr()
+            ))
+          }
+        }
+      }
+    }
+    
+    # ----------- 3. Korelasi Kategorik vs Kategorik (Cramér's V) -----------
+    if (length(cat_vars) >= 2) {
+      output_list <- append(output_list, list(tags$h4("Korelasi Kategorik vs Kategorik (Cramér's V)")))
+      
+      cramers_v <- function(x, y) {
+        tbl <- table(x, y)
+        chi2 <- suppressWarnings(chisq.test(tbl, correct = FALSE)$statistic)
+        n <- sum(tbl)
+        min_dim <- min(nrow(tbl) - 1, ncol(tbl) - 1)
+        sqrt(as.numeric(chi2) / (n * min_dim))
+      }
+      
+      mat <- matrix(NA, nrow = length(cat_vars), ncol = length(cat_vars))
+      rownames(mat) <- colnames(mat) <- cat_vars
+      
+      for (i in seq_along(cat_vars)) {
+        for (j in seq_along(cat_vars)) {
+          if (i == j) {
+            mat[i, j] <- 1
+          } else {
+            mat[i, j] <- tryCatch(
+              cramers_v(values$data[[cat_vars[i]]], values$data[[cat_vars[j]]]),
+              error = function(e) NA
+            )
+          }
+        }
+      }
+      
+      melted_cramer <- reshape2::melt(mat, na.rm = TRUE)
+      
+      output$cramers_plot <- renderPlot({
+        ggplot(melted_cramer, aes(Var1, Var2, fill = value)) +
+          geom_tile(color = "white") +
+          geom_text(aes(label = round(value, 2)), size = 4) +
+          scale_fill_gradient2(low = "white", high = "steelblue", limit = c(0,1),
+                               name = "Cramér's V") +
+          theme_minimal() +
+          labs(title = "Cramér's V antar Variabel Kategorik") +
+          theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+      })
+      
+      output_list <- append(output_list, list(plotOutput("cramers_plot")))
+    }
+    
+    do.call(tagList, output_list)
   })
-  
+
+  #PREDICTED
   output$actual_vs_predicted_plot <- renderPlot({
     req(values$model)
     
