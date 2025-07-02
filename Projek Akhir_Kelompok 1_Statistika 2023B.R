@@ -498,10 +498,10 @@ server <- function(input, output, session) {
     
     if (pval < alpha) {
       cat("Keputusan: Tolak H0\n")
-      cat("Interpretasi: Residual tidak berdistribusi normal.\n")
+      cat("Interpretasi:❌ Residual tidak berdistribusi normal.\n")
     } else { 
       cat("Keputusan: Gagal tolak H0\n")
-      cat("Interpretasi: Residual berdistribusi normal.\n")
+      cat("Interpretasi:✅ Residual berdistribusi normal.\n")
     }
   })
   
@@ -558,12 +558,12 @@ server <- function(input, output, session) {
     print(dw)
     cat("\nInterpretasi:\n")
     if (dw$p.value < 0.05) {
-      cat("Terdapat indikasi autokorelasi pada residual (p-value < 0.05) → residual tidak independen.\n")
+      cat("Terdapat indikasi autokorelasi pada residual (p-value < 0.05)\n❌ residual tidak independen.\n")
     } else {
-      cat("Tidak terdapat indikasi autokorelasi (p-value ≥ 0.05) → residual cenderung independen.\n")
+      cat("Tidak terdapat indikasi autokorelasi (p-value ≥ 0.05)\n✅ residual cenderung independen.\n")
     }
   })
-
+  
   #MULTIKOLINEARITAS
   output$uji_korelasi_output <- renderUI({
     req(values$data, values$indep_vars)
