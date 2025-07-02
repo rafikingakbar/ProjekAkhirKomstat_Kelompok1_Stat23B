@@ -201,7 +201,7 @@ ui <- dashboardPage(
             title = tagList(icon("columns"), "Uji Multikolinearitas"),
             width = 12,
             solidHeader = TRUE,
-            status = "warning",
+            status = "primary",
             uiOutput("multikolinearitas_info"),
             br(),
             conditionalPanel(
