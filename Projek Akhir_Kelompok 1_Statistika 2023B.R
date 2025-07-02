@@ -553,6 +553,7 @@ server <- function(input, output, session) {
     
     ggplot(data = melted, aes(Var1, Var2, fill = value)) +
       geom_tile(color = "white") +
+      geom_text(aes(label = round(value, 2)), size = 4, color = "black") +
       scale_fill_gradient2(low = "red", high = "blue", mid = "white",
                            midpoint = 0, limit = c(-1,1), space = "Lab",
                            name="Pearson\nCorrelation") +
