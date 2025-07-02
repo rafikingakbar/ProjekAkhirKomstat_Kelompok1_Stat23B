@@ -26,7 +26,6 @@ ui <- dashboardPage(
       background-attachment: fixed;
       background-position: center;
       font-family: 'Segoe UI', sans-serif;
-      text-align: justify;
     }
 
     .home-box, .box {
@@ -182,7 +181,9 @@ ui <- dashboardPage(
             ),
             tags$hr(),
             h4("Uji Shapiro-Wilk Residual"),
-            verbatimTextOutput("shapiro_test")
+            verbatimTextOutput("shapiro_test"),
+            verbatimTextOutput("shapiro_interpretasi")
+            
           ),
           box(
             title = tagList(icon("wave-square"), "Residual vs Index (Independensi)"),
@@ -320,6 +321,21 @@ server <- function(input, output, session) {
     shapiro.test(res)
   })
   
+  output$shapiro_interpretasi <- renderPrint({
+    req(values$model)
+    res <- resid(values$model)
+    shapiro <- shapiro.test(res)
+    pval <- shapiro$p.value
+    
+    if (pval < 0.05) {
+      cat("Interpretasi: p-value =", round(pval,4), 
+          "\nResidual tidak berdistribusi normal (tolak H0).")
+    } else {
+      cat("Interpretasi: p-value =", round(pval,4),
+          "\nResidual berdistribusi normal (gagal tolak H0).")
+    }
+  })
+  
   output$resid_vs_index <- renderPlot({
     req(values$model)
     plot(resid(values$model), type = "b", pch = 19, col = "darkgreen",
@@ -327,5 +343,6 @@ server <- function(input, output, session) {
     abline(h = 0, lty = 2)
   })
 }
+
 
 shinyApp(ui, server)
