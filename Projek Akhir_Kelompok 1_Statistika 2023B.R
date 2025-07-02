@@ -562,7 +562,7 @@ server <- function(input, output, session) {
     }
   })
 
-  # MULTIKOLINEARITAS
+  #MULTIKOLINEARITAS
   output$uji_korelasi_output <- renderUI({
     req(values$data, values$indep_vars)
     
@@ -571,7 +571,7 @@ server <- function(input, output, session) {
     
     output_list <- list()
     
-    # ----------- 1. Korelasi Numerik vs Numerik -----------
+    # -------- 1. Korelasi Numerik vs Numerik --------
     if (length(num_vars) >= 2) {
       corr_matrix <- cor(values$data[num_vars], use = "pairwise.complete.obs")
       melted <- reshape2::melt(corr_matrix)
@@ -583,20 +583,22 @@ server <- function(input, output, session) {
           scale_fill_gradient2(low = "red", high = "blue", mid = "white", midpoint = 0,
                                limit = c(-1, 1), name = "Pearson\nCorrelation") +
           theme_minimal() +
-          labs(title = "Korelasi Numerik vs Numerik") +
-          theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+          labs(title = "Korelasi Pearson antar Variabel Numerik") +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))
       })
       
       output_list <- append(output_list, list(
-        tags$h4("Korelasi Numerik vs Numerik"),
+        tags$h4("Korelasi Numerik vs Numerik (Pearson)"),
         plotOutput("corr_plot"),
+        tags$p("Interpretasi: Nilai mendekati 1 atau -1 menandakan korelasi kuat. Nilai mendekati 0 menunjukkan korelasi lemah."),
         tags$hr()
       ))
     }
     
-    # ----------- 2. Korelasi Numerik vs Kategorik (ANOVA) -----------
+    # -------- 2. Korelasi Numerik vs Kategorik (ANOVA) --------
     if (length(num_vars) > 0 && length(cat_vars) > 0) {
-      output_list <- append(output_list, list(tags$h4("Korelasi Numerik vs Kategorik (ANOVA)")))
+      output_list <- append(output_list, list(tags$h4("Uji Numerik vs Kategorik (ANOVA)")))
+      
       for (num in num_vars) {
         for (cat in cat_vars) {
           df <- na.omit(values$data[, c(num, cat)])
@@ -606,10 +608,22 @@ server <- function(input, output, session) {
           result <- tryCatch(anova(lm(formula, data = df)), error = function(e) NULL)
           
           if (!is.null(result)) {
-            result_text <- capture.output(print(result))
+            pval_raw <- result$`Pr(>F)`[1]
+            pval_fmt <- if (pval_raw < 0.0001) formatC(pval_raw, format = "e", digits = 2) else round(pval_raw, 4)
+            
+            interpret <- if (pval_raw < 0.05) {
+              "→ Karena p-value < 0.05, maka H₀ ditolak. Artinya, terdapat perbedaan rata-rata yang signifikan antara kelompok kategori."
+            } else {
+              "→ Karena p-value ≥ 0.05, maka H₀ diterima. Artinya, tidak terdapat perbedaan rata-rata yang signifikan antara kelompok kategori."
+            }
+            
+            
             output_list <- append(output_list, list(
               tags$b(paste("ANOVA", num, "vs", cat)),
-              tags$pre(paste(result_text, collapse = "\n")),
+              tags$em("H0: Tidak ada perbedaan rata-rata antar kelompok."),
+              tags$pre(paste(capture.output(print(result)), collapse = "\n")),
+              tags$p(paste("p-value =", pval_fmt)),
+              tags$p(interpret),
               tags$hr()
             ))
           }
@@ -617,7 +631,7 @@ server <- function(input, output, session) {
       }
     }
     
-    # ----------- 3. Korelasi Kategorik vs Kategorik (Cramér's V) -----------
+    # -------- 3. Korelasi Kategorik vs Kategorik (Cramér's V) --------
     if (length(cat_vars) >= 2) {
       output_list <- append(output_list, list(tags$h4("Korelasi Kategorik vs Kategorik (Cramér's V)")))
       
@@ -655,10 +669,20 @@ server <- function(input, output, session) {
                                name = "Cramér's V") +
           theme_minimal() +
           labs(title = "Cramér's V antar Variabel Kategorik") +
-          theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))
       })
       
-      output_list <- append(output_list, list(plotOutput("cramers_plot")))
+      output_list <- append(output_list, list(
+        plotOutput("cramers_plot"),
+        tags$p("Interpretasi:"),
+        tags$ul(
+          tags$li("0–0.1: Sangat lemah"),
+          tags$li("0.1–0.3: Lemah"),
+          tags$li("0.3–0.5: Sedang"),
+          tags$li("> 0.5: Kuat")
+        ),
+        tags$hr()
+      ))
     }
     
     do.call(tagList, output_list)
