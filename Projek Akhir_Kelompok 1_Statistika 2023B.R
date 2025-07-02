@@ -195,6 +195,13 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             verbatimTextOutput("model_formula")
           ),
+           box(
+            title = tagList(icon("chart-bar"), "Evaluasi Kinerja Model"),
+            width = 12,
+            status = "info",
+            solidHeader = TRUE,
+            verbatimTextOutput("model_metrics")
+          ),
           box(
             title = tagList(icon("chart-line"), "Scatter Plot: Data Aktual vs Prediksi"),
             width = 12,
@@ -730,6 +737,7 @@ server <- function(input, output, session) {
     legend("topleft", legend = c("Data", "Ideal"),
            col = c("red", "blue"), pch = c(19, NA), lty = c(NA, 1), lwd = c(NA, 2))
   })
+          
   output$manual_input_ui <- renderUI({
     req(values$model, values$indep_vars)
     
@@ -753,7 +761,36 @@ server <- function(input, output, session) {
     
     do.call(tagList, input_ui)
   })
-  
+          
+  output$model_metrics <- renderPrint({
+    req(values$model)
+    
+    y_actual <- values$model$model[[1]]
+    y_pred <- predict(values$model)
+    
+    res <- y_actual - y_pred
+    n <- length(y_actual)
+    p <- length(coef(values$model)) - 1
+    
+    rmse <- sqrt(mean(res^2))
+    mae <- mean(abs(res))
+    
+    r_squared <- summary(values$model)$r.squared
+    r_squared_adj <- summary(values$model)$adj.r.squared
+    
+    cat("Evaluasi Kinerja Model:\n")
+    cat("------------------------\n")
+    cat("RMSE (Root Mean Square Error):", round(rmse, 4), "\n")
+    cat("MAE  (Mean Absolute Error)   :", round(mae, 4), "\n")
+    cat("R² (R-squared)               :", round(r_squared, 4), "\n")
+    cat("R² Adjusted                  :", round(r_squared_adj, 4), "\n")
+    
+    cat("\nInterpretasi Umum:\n")
+    cat("- RMSE dan MAE yang kecil menandakan prediksi mendekati data asli.\n")
+    cat("- R² mengukur seberapa banyak variasi Y yang dijelaskan oleh model.\n")
+    cat("- R² Adjusted memperbaiki R² untuk penalti banyaknya variabel X.\n")
+  })
+          
   observeEvent(input$predict_manual, {
     req(values$model, values$indep_vars)
     
