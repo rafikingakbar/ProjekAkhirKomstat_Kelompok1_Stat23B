@@ -1,3 +1,4 @@
+
 library(shiny)
 library(shinyWidgets)
 library(shinydashboard)
@@ -272,17 +273,7 @@ ui <- dashboardPage(
             
             tags$hr(),
             
-            # Penjelasan dan hipotesis
-            tags$div(
-              h4("Hipotesis Uji:"),
-              tags$ul(
-                tags$li(tags$b("H0:"), " Tidak terdapat heteroskedastisitas (varian residual konstan / homoskedastisitas)"),
-                tags$li(tags$b("H1:"), " Terdapat heteroskedastisitas (varian residual tidak konstan)")
-              ),
-              
-              tags$p("Interpretasi visual: Jika titik-titik pada plot residual vs fitted tidak membentuk pola tertentu (acak), maka indikasi homoskedastisitas terpenuhi."),
-              tags$p("Interpretasi uji formal: Jika p-value < 0.05, maka tolak H0 dan terdapat indikasi heteroskedastisitas.")
-            )
+          
           )
           
           
@@ -487,14 +478,26 @@ server <- function(input, output, session) {
   output$bp_test <- renderPrint({
     req(values$model)
     test <- bptest(values$model)
+    
+    # Cetak hasil uji
     print(test)
-    cat("\nInterpretasi:\n")
+    
+    cat("\n")
+    cat("Hipotesis:\n")
+    cat("H0 : Residual memiliki varian konstan (homoskedastisitas)\n")
+    cat("H1 : Residual tidak memiliki varian konstan (terjadi heteroskedastisitas)\n\n")
+    
+    cat("Signifikansi (alpha) : 0.05\n")
+    cat("p-value : ", 
+        ifelse(test$p.value < 0.0001, "< 0.0001", formatC(test$p.value, format = "f", digits = 4)), "\n\n")
+    
     if (test$p.value < 0.05) {
-      cat("Terdapat indikasi heteroskedastisitas (p-value < 0.05).\n")
+      cat("❌ Tolak H0: Terdapat indikasi heteroskedastisitas\n")
     } else {
-      cat("Tidak terdapat indikasi heteroskedastisitas (p-value ≥ 0.05).\n")
-    } 
+      cat("✅ Gagal tolak H0: Tidak terdapat indikasi heteroskedastisitas\n")
+    }
   })
+  
   # Penjelasan multikolinearitas
   output$multikolinearitas_info <- renderUI({
     req(values$model)
