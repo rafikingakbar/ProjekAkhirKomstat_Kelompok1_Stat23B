@@ -274,7 +274,7 @@ ui <- dashboardPage(
             
           ),
           
-           # tab multikolinearitas
+          # tab multikolinearitas
           box(
             title = tagList(icon("columns"), "Uji Multikolinearitas & Korelasi"),
             width = 12,
@@ -282,7 +282,7 @@ ui <- dashboardPage(
             status = "primary",
             uiOutput("uji_korelasi_output")  # Output tunggal yang mencakup semua jenis korelasi
           ),
-           
+          
         )
       )
     )
@@ -548,16 +548,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # Penjelasan multikolinearitas
-  output$multikolinearitas_info <- renderUI({
-    req(values$model)
-    if (length(values$indep_vars) < 2) {
-      return(HTML("<p style='color:red; font-weight:bold;'>Model regresi Anda hanya memiliki 1 variabel prediktor (X), maka tidak perlu menguji multikolinearitas.</p>"))
-    } else {
-      return(HTML("<p><b>Multikolinearitas</b> dicek menggunakan VIF (Variance Inflation Factor) dan korelasi antar variabel numerik prediktor.</p>"))
-    }
-  })
-  
+  # Durbin Watson
   output$dw_test <- renderPrint({
     req(values$model)
     dw <- lmtest::dwtest(values$model)
@@ -570,29 +561,8 @@ server <- function(input, output, session) {
       cat("Tidak terdapat indikasi autokorelasi (p-value ≥ 0.05) → residual cenderung independen.\n")
     }
   })
-  
-  
-  # Tampilkan VIF hanya jika X ≥ 2
-  output$show_vif <- reactive({
-    return(!is.null(values$model) && length(values$indep_vars) >= 2)
-  })
-  outputOptions(output, "show_vif", suspendWhenHidden = FALSE)
-  
-  # Tampilkan matrix korelasi numerik jika ada ≥ 2 variabel numerik
-  output$show_corr <- reactive({
-    req(values$data, values$indep_vars)
-    num_vars <- values$indep_vars[sapply(values$data[values$indep_vars], is.numeric)]
-    return(length(num_vars) >= 2)
-  })
-  outputOptions(output, "show_corr", suspendWhenHidden = FALSE)
-  
-  # Output VIF
-  output$vif_output <- renderPrint({
-    req(values$model, length(values$indep_vars) >= 2)
-    car::vif(values$model)
-  })
-  
-  # MULTIKO
+
+  # MULTIKOLINEARITAS
   output$uji_korelasi_output <- renderUI({
     req(values$data, values$indep_vars)
     
@@ -693,7 +663,7 @@ server <- function(input, output, session) {
     
     do.call(tagList, output_list)
   })
-
+  
   #PREDICTED
   output$actual_vs_predicted_plot <- renderPlot({
     req(values$model)
