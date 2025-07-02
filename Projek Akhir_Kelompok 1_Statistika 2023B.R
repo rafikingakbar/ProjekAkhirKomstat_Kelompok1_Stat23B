@@ -15,6 +15,7 @@ ui <- dashboardPage(
       menuItem("Beranda", tabName = "home", icon = icon("home")),
       menuItem("Unggah Data", tabName = "upload", icon = icon("file-upload")),
       menuItem("Pemodelan", tabName = "model", icon = icon("chart-line")),
+      menuItem("Prediksi Baru", tabName = "predict", icon = icon("calculator")),
       menuItem("Uji Asumsi Klasik", tabName = "asumsi", icon = icon("check-double"))
     )
   ),
@@ -184,7 +185,21 @@ ui <- dashboardPage(
           )
         )
       ),
-      
+      tabItem(
+        tabName = "predict",
+        fluidRow(
+          box(
+            title = tagList(icon("calculator"), "Prediksi Nilai Y Baru"),
+            width = 12,
+            status = "info",
+            solidHeader = TRUE,
+            uiOutput("manual_input_ui"),
+            actionButton("predict_manual", "Prediksi", class = "btn btn-success"),
+            tags$hr(),
+            verbatimTextOutput("manual_prediction")
+          )
+        )
+      ),
       # UJI ASUMSI
       tabItem(
         tabName = "asumsi",
@@ -560,7 +575,52 @@ server <- function(input, output, session) {
     legend("topleft", legend = c("Data", "Ideal"),
            col = c("red", "blue"), pch = c(19, NA), lty = c(NA, 1), lwd = c(NA, 2))
   })
+  output$manual_input_ui <- renderUI({
+    req(values$model, values$indep_vars)
+    
+    input_ui <- lapply(values$indep_vars, function(var) {
+      tipe <- values$x_types[[var]]
+      if (tipe == "Kategorik (Dummy)") {
+        levels_var <- unique(as.character(values$data[[var]]))
+        selectInput(
+          inputId = paste0("pred_", var),
+          label = paste("Masukkan nilai", var),
+          choices = levels_var
+        )
+      } else {
+        numericInput(
+          inputId = paste0("pred_", var),
+          label = paste("Masukkan nilai", var),
+          value = 0
+        )
+      }
+    })
+    
+    do.call(tagList, input_ui)
+  })
   
+  observeEvent(input$predict_manual, {
+    req(values$model, values$indep_vars)
+    
+    new_data <- data.frame(matrix(ncol = length(values$indep_vars), nrow = 1))
+    names(new_data) <- values$indep_vars
+    
+    for (var in values$indep_vars) {
+      tipe <- values$x_types[[var]]
+      if (tipe == "Kategorik (Dummy)") {
+        new_data[[var]] <- factor(input[[paste0("pred_", var)]],
+                                  levels = unique(as.character(values$data[[var]])))
+      } else {
+        new_data[[var]] <- as.numeric(input[[paste0("pred_", var)]])
+      }
+    }
+    
+    pred <- predict(values$model, newdata = new_data)
+    
+    output$manual_prediction <- renderPrint({
+      cat("Prediksi nilai", values$dep_var, "adalah:", round(pred, 4))
+    })
+  })
 }
 
 
