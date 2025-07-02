@@ -136,12 +136,21 @@ ui <- dashboardPage(
             div(class = "table-responsive",
                 tableOutput("table")
             ),
+            
             conditionalPanel(
-              condition = "output.model_exists == true",
+              condition = "output.regression_status == 'success'",
               tags$div(
                 tags$hr(),
-                tags$p("✅ Regresi berhasil dijalankan. Silakan cek hasilnya di tab Pemodelan.",
+                tags$p("\u2705 Regresi berhasil dijalankan. Silakan cek hasilnya di tab Pemodelan.",
                        style = "color: green; font-weight: bold;")
+              )
+            ),
+            conditionalPanel(
+              condition = "output.regression_status == 'failed'",
+              tags$div(
+                tags$hr(),
+                tags$p("\u274C Regresi gagal dijalankan. Pastikan variabel kategorik diatur ke Kategorik (Dummy).",
+                       style = "color: red; font-weight: bold;")
               )
             )
           )
@@ -265,7 +274,8 @@ server <- function(input, output, session) {
     dep_var = NULL,
     indep_vars = NULL,
     x_types = list(),
-    model = NULL
+    model = NULL,
+    regression_status = NULL
   )
   
   observe({
@@ -333,15 +343,32 @@ server <- function(input, output, session) {
     }
     
     formula_str <- paste(values$dep_var, "~", paste(values$indep_vars, collapse = " + "))
-    model <- lm(as.formula(formula_str), data = df)
-    values$model <- model
+    tryCatch({
+      model <- lm(as.formula(formula_str), data = df)
+      values$model <- model
+      values$regression_status <- "success"
+    }, error = function(e) {
+      values$model <- NULL
+      values$regression_status <- "failed"
+      showNotification(
+        paste0(
+          "Terjadi kesalahan saat menjalankan regresi.\n",
+          "Pastikan variabel kategorik diatur sebagai Kategorik (Dummy)."
+        ),
+        type = "error",
+        duration = 7
+      )
+    })
   })
   
   output$model_exists <- reactive({
     return(!is.null(values$model))
   })
   outputOptions(output, "model_exists", suspendWhenHidden = FALSE)
-  
+  output$regression_status <- reactive({
+    values$regression_status
+  })
+  outputOptions(output, "regression_status", suspendWhenHidden = FALSE)
   output$model_formula <- renderPrint({
     req(values$model)
     coefs <- summary(values$model)$coefficients
