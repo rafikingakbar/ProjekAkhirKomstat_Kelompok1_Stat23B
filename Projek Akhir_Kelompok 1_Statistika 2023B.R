@@ -171,18 +171,17 @@ ui <- dashboardPage(
         tabName = "asumsi",
         fluidRow(
           box(
-            title = tagList(icon("chart-bar"), "Histogram Residual"),
+            title = tagList(icon("chart-bar"), "Uji Normalitas Residual"),
             width = 12,
             solidHeader = TRUE,
             status = "primary",
-            plotOutput("hist_resid")
-          ),
-          box(
-            title = tagList(icon("project-diagram"), "QQ Plot"),
-            width = 12,
-            solidHeader = TRUE,
-            status = "primary",
-            plotOutput("qq_resid")
+            fluidRow(
+              column(12, plotOutput("hist_resid")),
+              column(12, plotOutput("qq_resid"))
+            ),
+            tags$hr(),
+            h4("Uji Shapiro-Wilk Residual"),
+            verbatimTextOutput("shapiro_test")
           ),
           box(
             title = tagList(icon("wave-square"), "Residual vs Index (Independensi)"),
@@ -312,6 +311,12 @@ server <- function(input, output, session) {
     req(values$model)
     qqnorm(resid(values$model))
     qqline(resid(values$model), col = "red")
+  })
+  
+  output$shapiro_test <- renderPrint({
+    req(values$model)
+    res <- resid(values$model)
+    shapiro.test(res)
   })
   
   output$resid_vs_index <- renderPlot({
