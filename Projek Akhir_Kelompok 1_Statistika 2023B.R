@@ -143,10 +143,10 @@ ui <- dashboardPage(
             ), 
             
             radioButtons("na_option", "Penanganan Nilai Hilang:",
-                         choices = c("Hapus baris dengan NA" = "drop",
-                                     "Ganti NA dengan rata-rata (hanya numerik)" = "mean",
-                                     "Biarkan (akan error jika tidak ditangani)" = "none"),
-                         selected = "drop"),
+                         choices = c("Biarkan data NA)" = "none",
+                                     "Hapus baris dengan NA" = "drop",
+                                     "Ganti NA dengan rata-rata (hanya numerik)" = "mean"),
+                         selected = "none"),
             
             
             conditionalPanel(
